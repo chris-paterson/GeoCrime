@@ -2,12 +2,12 @@ package com.example.chris_paterson.onsapp;
 
 import android.app.Activity;
 import android.content.Context;
-import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -19,17 +19,22 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
-import java.util.Locale;
 
 
 public class MainActivity extends Activity {
     public final String API_KEY = "xBAPV3FSrr";
     ListView display;
     Button submit;
-    TextView lon;
-    TextView lat;
-    ArrayList<Crime> crimes;
+    TextView lonInput;
+    TextView latInput;
     double locLon;
     double locLat;
 
@@ -40,44 +45,34 @@ public class MainActivity extends Activity {
 
         display = (ListView) findViewById(R.id.display);
         submit = (Button) findViewById(R.id.submit);
-        lon = (TextView) findViewById(R.id.lon);
-        lat = (TextView) findViewById(R.id.lat);
+        lonInput = (TextView) findViewById(R.id.lon);
+        latInput = (TextView) findViewById(R.id.lat);
+
+        // TODO: Stuff for testing, delete.
+        lonInput.setText("-1.131592");
+        latInput.setText("52.629729");
     }
 
     public void submit(View view) {
-        setLocation();
-        /*
+//        setLocation();
+
         // check to see if they are connected to the network.
         ConnectivityManager connMgr = (ConnectivityManager)
                 getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         if (networkInfo != null && networkInfo.isConnected()) {
             // TODO Get the location via GPS.
-            String latLocation = lat.getText().toString();
-            String lonLocation = lon.getText().toString();
+            String latLocation = latInput.getText().toString();
+            String lonLocation = lonInput.getText().toString();
 
             // Get the URL.
             String url = createUrl(latLocation, lonLocation);
 
             // Get the data.
-            String jsonResult = sendRequest(url);
-
-            // Get/set arraylist of crimes for that area
-            JSONParser jp = new JSONParser(jsonResult);
-            this.crimes = jp.getCrimes();
-
-            for (Crime c : crimes) {
-                Log.d("outcome", c.getOutcome());
-            }
-
-            ArrayAdapter<Crime> adapter = new CrimeAdapter(MainActivity.this, R.layout.crime_list, crimes);
-            display.setAdapter(adapter);
-
+            sendRequest(url);
         } else {
             Toast.makeText(this, "No network connection.", Toast.LENGTH_SHORT);
-        }*/
-
-
+        }
     }
 
     private void setLocation() {
@@ -87,8 +82,8 @@ public class MainActivity extends Activity {
             locLon = location.getLongitude();
             locLat = location.getLatitude();
 
-            lon.setText(location.getLongitude() + "");
-            lat.setText(location.getLatitude() + "");
+            lonInput.setText(location.getLongitude() + "");
+            latInput.setText(location.getLatitude() + "");
         }
     }
 
@@ -118,14 +113,14 @@ public class MainActivity extends Activity {
     private String createUrl(String lat, String lng) {
         String url = "https://data.police.uk/api/crimes-at-location?" +
                 "&lat=" + lat +
-                "&lng=" + lng;
+                "&lng=" + lng +
+                "&date=2015-03";
 
         return url;
     }
 
-    private String sendRequest(String url) {
-        RequestHelper rh = new RequestHelper(url);
-        return rh.getResult();
+    private void sendRequest(String url) {
+        new AsyncGet().execute(url);
     }
 
     @Override
@@ -148,5 +143,67 @@ public class MainActivity extends Activity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public class AsyncGet extends AsyncTask<String, Void, String> {
+        private final String DEBUG_TAG = "AsyncGet";
+
+        @Override
+        protected String doInBackground(String... urls) {
+
+            // params comes from the execute() call: params[0] is the url.
+            try {
+                return getData(urls[0]);
+            } catch (IOException e) {
+                return "Unable to retrieve web page. URL may be invalid.";
+            }
+        }
+        // onPostExecute displays the results of the AsyncTask.
+        @Override
+        protected void onPostExecute(String jsonResult) {
+            // Get/set arraylist of crimes for that area
+            JSONParser jp = new JSONParser(jsonResult);
+            ArrayList<Crime> crimes = jp.getCrimes();
+
+            displayCrimes(crimes);
+        }
+
+        private void displayCrimes(ArrayList<Crime> crimes) {
+            ArrayAdapter<Crime> adapter = new CrimeAdapter(MainActivity.this, R.layout.crime_list, crimes);
+            display.setAdapter(adapter);
+        }
+
+        private String getData(String myurl) throws IOException {
+            InputStream is = null;
+
+            URL url = new URL(myurl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setReadTimeout(10000 /* milliseconds */);
+            conn.setConnectTimeout(15000 /* milliseconds */);
+            conn.setRequestMethod("GET");
+            conn.setDoInput(true);
+            // Starts the query
+            conn.connect();
+            int response = conn.getResponseCode();
+            Log.d(DEBUG_TAG, "The response is: " + response);
+            is = conn.getInputStream();
+
+            // Convert the InputStream into a string
+            String contentAsString = readIt(is);
+            return contentAsString;
+        }
+
+        public String readIt(InputStream stream) throws IOException, UnsupportedEncodingException {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+            StringBuilder out = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                out.append(line);
+            }
+            System.out.println(out.toString());   //Prints the string content read from input stream
+            reader.close();
+
+            return out.toString();
+        }
     }
 }
