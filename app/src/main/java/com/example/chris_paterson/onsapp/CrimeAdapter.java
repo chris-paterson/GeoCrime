@@ -38,11 +38,15 @@ public class CrimeAdapter extends ArrayAdapter<Crime>{
         TextView date = (TextView) itemView.findViewById(R.id.date);
         TextView outcome = (TextView) itemView.findViewById(R.id.outcome);
 
-        category.setText(currentCrime.getCategory());
-        street.setText(currentCrime.getStreet());
-        date.setText(currentCrime.getDate());
-        outcome.setText(currentCrime.getOutcome());
+        category.setText("Category: " + toTitle(currentCrime.getCategory()));
+        street.setText("Area: " + currentCrime.getStreet());
+        date.setText("Date: " + currentCrime.getDate());
+        outcome.setText("Outcome: " + currentCrime.getOutcome());
 
         return itemView;
+    }
+
+    private String toTitle(String word) {
+        return word.substring(0, 1).toUpperCase() + word.substring(1);
     }
 }

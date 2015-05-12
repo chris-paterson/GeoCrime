@@ -116,6 +116,8 @@ public class MainActivity extends Activity {
                 "&lng=" + lng +
                 "&date=2015-03";
 
+        url =
+                "https://data.police.uk/api/crimes-street/all-crime?lat=51.5833&lng=-3.0000&date=2015-03";
         return url;
     }
 
@@ -145,6 +147,10 @@ public class MainActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
+
+    /**
+     * Gets the data from the police API and populate listview on complete.
+     */
     public class AsyncGet extends AsyncTask<String, Void, String> {
         private final String DEBUG_TAG = "AsyncGet";
 
@@ -166,6 +172,7 @@ public class MainActivity extends Activity {
             ArrayList<Crime> crimes = jp.getCrimes();
 
             displayCrimes(crimes);
+            Log.d(DEBUG_TAG, "completed list");
         }
 
         private void displayCrimes(ArrayList<Crime> crimes) {

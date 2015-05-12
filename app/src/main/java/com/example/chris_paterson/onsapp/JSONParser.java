@@ -1,5 +1,7 @@
 package com.example.chris_paterson.onsapp;
 
+import android.util.Log;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -9,6 +11,7 @@ import java.util.ArrayList;
 public class JSONParser {
     private final String json;
     ArrayList<Crime> crimes;
+    private static final String DEBUG_TAG = "JSONParser";
 
     public JSONParser(String json) {
         this.json = json;
@@ -34,7 +37,14 @@ public class JSONParser {
 
             String category = obj.getString("category");
             String date = obj.getString("month");
-            String outcome = obj.getJSONObject("outcome_status").getString("category");
+
+            // API returns null sometimes so we check below.
+            String outcome = "";
+            if (obj.isNull("outcome_status")) {
+                outcome = "No information on outcome.";
+            } else {
+                outcome = obj.getJSONObject("outcome_status").getString("category");
+            }
 
             String street = obj
                     .getJSONObject("location")
@@ -43,10 +53,11 @@ public class JSONParser {
 
             crime.setCategory(category);
             crime.setDate(date);
-            crime.setOutcome(outcome);
             crime.setStreet(street);
+            crime.setOutcome(outcome);
 
             addCrime(crime);
+            Log.d(DEBUG_TAG, crime.getStreet());
         }
     }
 
