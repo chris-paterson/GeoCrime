@@ -3,7 +3,6 @@ package com.example.chris_paterson.onsapp;
 import android.app.Activity;
 import android.content.Context;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -30,13 +29,12 @@ import java.util.ArrayList;
 
 
 public class MainActivity extends Activity {
-    public final String API_KEY = "xBAPV3FSrr";
     ListView display;
     Button submit;
     TextView lonInput;
     TextView latInput;
-    double locLon;
-    double locLat;
+    LocationManager locationManager;
+    private static final String DEBUG_TAG = "MAIN_ACTIVITY";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,21 +45,15 @@ public class MainActivity extends Activity {
         submit = (Button) findViewById(R.id.submit);
         lonInput = (TextView) findViewById(R.id.lon);
         latInput = (TextView) findViewById(R.id.lat);
-
-        // TODO: Stuff for testing, delete.
-        lonInput.setText("-1.131592");
-        latInput.setText("52.629729");
+        locationManager = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
     }
 
     public void submit(View view) {
-//        setLocation();
-
-        // check to see if they are connected to the network.
+         // check to see if they are connected to the network.
         ConnectivityManager connMgr = (ConnectivityManager)
                 getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         if (networkInfo != null && networkInfo.isConnected()) {
-            // TODO Get the location via GPS.
             String latLocation = latInput.getText().toString();
             String lonLocation = lonInput.getText().toString();
 
@@ -75,49 +67,24 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void setLocation() {
-        LocationManager lm = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
-        Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        if(null != location) {
-            locLon = location.getLongitude();
-            locLat = location.getLatitude();
+    public void getLocation(View view) {
+        Location lastLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        String lat = String.valueOf(lastLocation.getLatitude());
+        String lon = String.valueOf(lastLocation.getLongitude());
 
-            lonInput.setText(location.getLongitude() + "");
-            latInput.setText(location.getLatitude() + "");
-        }
+        lonInput.setText(lon);
+        latInput.setText(lat);
+
+        Log.d("LOCATION_LAT", String.valueOf(lastLocation.getLatitude()));
+        Log.d("LOCATION_LON", String.valueOf(lastLocation.getLongitude()));
     }
 
-    private final LocationListener locationListener = new LocationListener() {
-        public void onLocationChanged(Location location) {
-            locLon = location.getLongitude();
-            locLat = location.getLatitude();
-        }
 
-        @Override
-        public void onStatusChanged(String provider, int status, Bundle extras) {
-
-        }
-
-        @Override
-        public void onProviderEnabled(String provider) {
-
-        }
-
-        @Override
-        public void onProviderDisabled(String provider) {
-
-        }
-    };
-
-
-    private String createUrl(String lat, String lng) {
-        String url = "https://data.police.uk/api/crimes-at-location?" +
+    private String createUrl(String lat, String lon) {
+        String url = "http://data.police.uk/api/crimes-street/all-crime?" +
                 "&lat=" + lat +
-                "&lng=" + lng +
-                "&date=2015-03";
-
-        url =
-                "https://data.police.uk/api/crimes-street/all-crime?lat=51.5833&lng=-3.0000&date=2015-03";
+                "&lng=" + lon;
+        Log.d(DEBUG_TAG, url);
         return url;
     }
 
@@ -207,7 +174,6 @@ public class MainActivity extends Activity {
             while ((line = reader.readLine()) != null) {
                 out.append(line);
             }
-            System.out.println(out.toString());   //Prints the string content read from input stream
             reader.close();
 
             return out.toString();

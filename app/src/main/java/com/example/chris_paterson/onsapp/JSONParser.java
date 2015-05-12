@@ -57,7 +57,6 @@ public class JSONParser {
             crime.setOutcome(outcome);
 
             addCrime(crime);
-            Log.d(DEBUG_TAG, crime.getStreet());
         }
     }
 

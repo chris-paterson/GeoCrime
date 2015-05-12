@@ -1,8 +1,9 @@
 <resources>
-    <string name="app_name">ONSApp</string>
+    <string name="app_name">GeoCrime</string>
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="submit">Submit</string>
     <string name="location">Longitude and Latitude (6 decimal places)</string>
+    <string name="get_location">Get Location</string>
 </resources>
