@@ -18,6 +18,10 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -81,8 +85,8 @@ public class MainActivity extends Activity {
 
 
     private String createUrl(String lat, String lon) {
-        String url = "http://data.police.uk/api/crimes-street/all-crime?" +
-                "&lat=" + lat +
+        String url = "http://data.police.uk/api/crimes-at-location?" +
+                "lat=" + lat +
                 "&lng=" + lon;
         Log.d(DEBUG_TAG, url);
         return url;
@@ -120,35 +124,73 @@ public class MainActivity extends Activity {
      */
     public class AsyncGet extends AsyncTask<String, Void, String> {
         private final String DEBUG_TAG = "AsyncGet";
+        ArrayList<Crime> crimes = new ArrayList<>();
 
         @Override
         protected String doInBackground(String... urls) {
 
             // params comes from the execute() call: params[0] is the url.
             try {
-                return getData(urls[0]);
+                ArrayList<String> dates = getDates();
+                String json = "";
+                for(String date : dates) {
+                    String result = getData(urls[0] + "&date=" + date);
+                    if (!result.equals("[]")) {
+                        json += result + "@";
+                    }
+                }
+
+                return json;
             } catch (IOException e) {
                 return "Unable to retrieve web page. URL may be invalid.";
+            } catch (JSONException e) {
+                return "Unable to parse JSON.";
             }
         }
+
+        private ArrayList<String> getDates() throws IOException, JSONException {
+            ArrayList<String> dates = new ArrayList<>();
+            String datesAsJson = getData("https://data.police.uk/api/crimes-street-dates");
+
+
+            JSONArray jsonArray = new JSONArray(datesAsJson.trim());
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject obj = jsonArray.getJSONObject(i);
+                dates.add(obj.getString("date"));
+                Log.d(DEBUG_TAG, dates.get(i));
+            }
+
+            return dates;
+        }
+
         // onPostExecute displays the results of the AsyncTask.
         @Override
-        protected void onPostExecute(String jsonResult) {
+        protected void onPostExecute(String jsonResults) {
             // Get/set arraylist of crimes for that area
-            JSONParser jp = new JSONParser(jsonResult);
-            ArrayList<Crime> crimes = jp.getCrimes();
+            JSONParser jp = new JSONParser(jsonResults);
+
+            for (Crime crime : jp.getCrimes()) {
+                crimes.add(crime);
+            }
 
             displayCrimes(crimes);
             Log.d(DEBUG_TAG, "completed list");
         }
 
         private void displayCrimes(ArrayList<Crime> crimes) {
-            ArrayAdapter<Crime> adapter = new CrimeAdapter(MainActivity.this, R.layout.crime_list, crimes);
-            display.setAdapter(adapter);
+            if(crimes.size() > 0) {
+                ArrayAdapter<Crime> adapter = new CrimeAdapter(MainActivity.this, R.layout.crime_list, crimes);
+                display.setAdapter(adapter);
+            } else {
+                // TODO Display message saying no crimes in this area.
+
+            }
         }
 
         private String getData(String myurl) throws IOException {
             InputStream is = null;
+            Log.d(DEBUG_TAG, "URL: " + myurl);
 
             URL url = new URL(myurl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
