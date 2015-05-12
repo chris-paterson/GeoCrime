@@ -1,4 +1,4 @@
-package com.example.chris_paterson.onsapp;
+package com.example.chris_paterson.geocrime;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

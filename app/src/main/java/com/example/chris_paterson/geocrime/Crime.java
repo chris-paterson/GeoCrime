@@ -1,4 +1,4 @@
-package com.example.chris_paterson.onsapp;
+package com.example.chris_paterson.geocrime;
 
 
 public class Crime {

@@ -1,7 +1,8 @@
-package com.example.chris_paterson.onsapp;
+package com.example.chris_paterson.geocrime;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.location.Location;
@@ -14,6 +15,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -41,6 +43,7 @@ public class MainActivity extends Activity {
     TextView latInput;
     LocationManager locationManager;
     private static final String DEBUG_TAG = "MAIN_ACTIVITY";
+    ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,11 +58,16 @@ public class MainActivity extends Activity {
     }
 
     public void submit(View view) {
+        hideKeyboard();
+
          // check to see if they are connected to the network.
         ConnectivityManager connMgr = (ConnectivityManager)
                 getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+
         if (networkInfo != null && networkInfo.isConnected()) {
+            progressDialog = ProgressDialog.show(MainActivity.this, "Getting Data", "Please wait");
+
             String latLocation = latInput.getText().toString();
             String lonLocation = lonInput.getText().toString();
 
@@ -74,8 +82,16 @@ public class MainActivity extends Activity {
             }
 
         } else {
-            Toast.makeText(this, "No network connection.", Toast.LENGTH_SHORT);
+            Toast.makeText(this, "No network connection.", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void hideKeyboard() {
+        InputMethodManager inputManager = (InputMethodManager)
+                getSystemService(Context.INPUT_METHOD_SERVICE);
+
+        inputManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(),
+                InputMethodManager.HIDE_NOT_ALWAYS);
     }
 
     public void getLocation(View view) {
@@ -151,7 +167,7 @@ public class MainActivity extends Activity {
     /**
      * Gets the data from the police API and populate listview on complete.
      */
-    public class AsyncGet extends AsyncTask<String, Void, String> {
+    public class AsyncGet extends AsyncTask<String, Integer, String> {
         private final String DEBUG_TAG = "AsyncGet";
         ArrayList<Crime> crimes = new ArrayList<>();
 
@@ -212,10 +228,12 @@ public class MainActivity extends Activity {
                 // hide spinner
                 ArrayAdapter<Crime> adapter = new CrimeAdapter(MainActivity.this, R.layout.crime_list, crimes);
                 display.setAdapter(adapter);
+
             } else {
                 // TODO Display message saying no crimes in this area.
 
             }
+            progressDialog.dismiss();
         }
 
         private String getData(String myurl) throws IOException {
@@ -249,6 +267,11 @@ public class MainActivity extends Activity {
             reader.close();
 
             return out.toString();
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... progress) {
+            Log.d("PROGRESS: ", progress[0] + "");
         }
     }
 }

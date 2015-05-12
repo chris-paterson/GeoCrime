@@ -1,4 +1,4 @@
-package com.example.chris_paterson.onsapp;
+package com.example.chris_paterson.geocrime;
 
 import android.content.Context;
 import android.view.LayoutInflater;
