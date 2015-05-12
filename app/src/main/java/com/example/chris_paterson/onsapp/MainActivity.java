@@ -1,7 +1,9 @@
 package com.example.chris_paterson.onsapp;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
@@ -61,17 +63,26 @@ public class MainActivity extends Activity {
             String latLocation = latInput.getText().toString();
             String lonLocation = lonInput.getText().toString();
 
-            // Get the URL.
-            String url = createUrl(latLocation, lonLocation);
+            if (latLocation.equals("") || lonLocation.equals("")) {
+                createLocationAlert();
+            } else {
+                // Get the URL.
+                String url = createUrl(latLocation, lonLocation);
 
-            // Get the data.
-            sendRequest(url);
+                // Get the data.
+                sendRequest(url);
+            }
+
         } else {
             Toast.makeText(this, "No network connection.", Toast.LENGTH_SHORT);
         }
     }
 
     public void getLocation(View view) {
+        getAndSetLocation();
+    }
+
+    private void getAndSetLocation() {
         Location lastLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
         String lat = String.valueOf(lastLocation.getLatitude());
         String lon = String.valueOf(lastLocation.getLongitude());
@@ -94,6 +105,24 @@ public class MainActivity extends Activity {
 
     private void sendRequest(String url) {
         new AsyncGet().execute(url);
+    }
+
+    private void createLocationAlert() {
+        new AlertDialog.Builder(this)
+                .setTitle("Location required")
+                .setMessage("You are required to enter a location. Would you like us to get it now?")
+                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        // continue with delete
+                        getAndSetLocation();
+                    }
+                })
+                .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                })
+                .show();
     }
 
     @Override
@@ -180,6 +209,7 @@ public class MainActivity extends Activity {
 
         private void displayCrimes(ArrayList<Crime> crimes) {
             if(crimes.size() > 0) {
+                // hide spinner
                 ArrayAdapter<Crime> adapter = new CrimeAdapter(MainActivity.this, R.layout.crime_list, crimes);
                 display.setAdapter(adapter);
             } else {
